@@ -1,6 +1,6 @@
 [package]
 name = "n64romconvert"
-version = "0.1.0-alpha"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
