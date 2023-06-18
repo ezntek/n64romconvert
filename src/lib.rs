@@ -4,7 +4,7 @@
 //! between Nintendo 64 ROM formats,
 //! including Byte-Swapped Little Endian
 //! (v64), Little endian (n64), and Big
-//! Endian (z64), through the CLI.
+//! Endian (z64), on the CLI.
 //!
 //! You _can_ use it like a crate, but
 //! now the question would be why would you.
