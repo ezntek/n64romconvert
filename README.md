@@ -1,4 +1,4 @@
-# sm64romconvert
+# n64romconvert
 
 it's a small tool to help you convert between Nintendo 64 ROM formats, including Byte-Swapped Little Endian (v64), Little endian (n64), and Big Endian (z64), on the CLI. 
 
