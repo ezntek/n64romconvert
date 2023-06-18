@@ -4,7 +4,6 @@ version = "0.1.0-alpha"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
-license-file = "LICENSE.md"
 description = "Small tool to help you convert between Nintendo 64 ROM formats, on the CLI."
 documentation = "https://docs.rs/n64romconvert/latest/n64romconvert/index.html"
 
