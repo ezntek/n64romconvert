@@ -6,8 +6,6 @@
 //! (v64), Little endian (n64), and Big
 //! Endian (z64), on the CLI.
 //!
-//! You _can_ use it like a crate, but
-//! now the question would be why would you.
 
 use colored::Colorize;
 use std::{
@@ -122,8 +120,7 @@ pub fn determine_format<P: AsRef<Path>>(file_path: P) -> Result<RomType, Error> 
     Ok(result)
 }
 
-/// Swap the endianness of the ROM, taking
-/// in 2 paths and a callback for progress.
+/// Swap the endianness of the ROM.
 pub fn endian_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
     let in_file = fs::File::open(input_file)
         .unwrap_or_else(|e| panic!("failed to open the ROM as a file: {}", e));
@@ -144,6 +141,8 @@ pub fn endian_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
     }
 }
 
+/// Byteswap a rom, where pairs of bytes
+/// are swapped.
 pub fn byte_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
     let in_file = fs::File::open(input_file).unwrap();
 
@@ -165,8 +164,7 @@ pub fn byte_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
 }
 
 /// Both swap byte pairs and change the
-/// endianness of a ROM, taking in 2
-/// paths and a callback for progress.
+/// endianness of a ROM.
 pub fn byte_endian_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
     let in_file = fs::File::open(input_file).unwrap();
 
