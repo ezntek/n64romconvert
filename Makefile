@@ -7,6 +7,9 @@ UNINSTALL_FILES := $(strip $(foreach file, $(UNINSTALL_FILENAMES),$(wildcard $(f
 
 export PATH := $(HOME)/.local/bin:$(PATH)
 
+docs:
+	cargo doc --no-deps
+
 all: make_localbin build install
 
 install:
