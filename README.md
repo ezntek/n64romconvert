@@ -1,15 +1,43 @@
 # n64romconvert
 
-it's a small tool to help you convert between Nintendo 64 ROM formats, including Byte-Swapped Little Endian (v64), Little endian (n64), and Big Endian (z64), on the CLI. 
+It's a tool containing 2 binaries to help you check and convert between Nintendo 64 ROM formats, including Byte-Swapped Big Endian (v64), Little endian (n64), and Big Endian (z64), on the CLI. 
 
-## installation
+## Installation
 
-you can issue a cargo install like this: `cargo install n64romconvert`, or issue `make`.
+You can issue a cargo install like this: `cargo install n64romconvert`, or issue `make`.
 
-## usage
+## Usage
 
-issue `n64romconvert --help` for an up-to-date usage guide.
+n64romconvert comes with 2 sub-tools, `n64romconvert` itself, and another binary called `n64romtype`, that uses this crate's `determine_format` function to determine the format of a given ROM.
 
-## note
+n64romconvert:
 
-You _can_ use it like a crate, but now the question would be why would you.
+```
+Small tool to help you convert between Nintendo 64 ROM formats, on the CLI.
+
+Usage: n64romconvert [OPTIONS] <ROM>
+
+Arguments:
+  <ROM>  
+
+Options:
+  -T, --output-type <OUTPUT_TYPE>  specify the output ROM type. selects z64 by default.
+  -o, --outfile <OUTFILE>          specify the output file.
+  -h, --help                       Print help
+  -V, --version                    Print version
+```
+
+n64romtype:
+
+```
+Small tool to help you convert between Nintendo 64 ROM formats, on the CLI.
+
+Usage: n64romtype <FILE_PATH>
+
+Arguments:
+  <FILE_PATH>  
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```

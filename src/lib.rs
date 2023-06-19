@@ -2,19 +2,21 @@
 //!
 //! It's a small tool to help you convert
 //! between Nintendo 64 ROM formats,
-//! including Byte-Swapped Little Endian
+//! including Byte-Swapped Big Endian
 //! (v64), Little endian (n64), and Big
 //! Endian (z64), on the CLI.
 //!
 //! You _can_ use it like a crate, but
 //! now the question would be why would you.
 
+use colored::Colorize;
 use std::{
     fmt::Display,
     fs,
-    io::{Read, Write},
+    io::{BufWriter, Read, Write},
     os::unix::prelude::FileExt,
     path::Path,
+    process::exit,
 };
 use RomType::*;
 
@@ -42,7 +44,7 @@ impl RomType {
 
     /// Create a new RomType from
     /// a string type.
-    pub fn from_str<S: AsRef<str>>(s: S) -> Result<RomType, Error> {
+    pub fn from_string<S: AsRef<str>>(s: S) -> Result<RomType, Error> {
         let result = match s.as_ref() {
             "n64" => LittleEndian,
             "z64" => BigEndian,
@@ -62,7 +64,14 @@ impl ToString for RomType {
 
 #[derive(Debug)]
 /// An error.
-pub struct Error(String);
+pub struct Error(pub String);
+
+impl Error {
+    pub fn pretty_panic(&self) {
+        println!("{}{}", "error: ".bold().red(), self);
+        exit(1)
+    }
+}
 
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -85,12 +94,20 @@ impl std::error::Error for Error {
 }
 
 /// Determine the format of the ROM, given the file path.
+/// Returns an error if it did not recognize a supported
+/// format.
+///
+/// Supported formats include:
+///  * Big Endian Byteswapped (v64)
+///  * Big Endian (z64)
+///  * Little Endian (n64)
+///
 pub fn determine_format<P: AsRef<Path>>(file_path: P) -> Result<RomType, Error> {
     let mut file = fs::File::open(file_path.as_ref())
         .unwrap_or_else(|e| panic!("failed to open the file: {}", e));
     let mut buf: [u8; 4] = [0, 0, 0, 0];
 
-    file.read(&mut buf)
+    file.read_exact(&mut buf)
         .unwrap_or_else(|e| panic!("failed to read the first 4 bytes of the ROM file: {}", e));
 
     use RomType::*;
@@ -105,69 +122,66 @@ pub fn determine_format<P: AsRef<Path>>(file_path: P) -> Result<RomType, Error> 
     Ok(result)
 }
 
-/// Swap the endian of the ROM, taking
+/// Swap the endianness of the ROM, taking
 /// in 2 paths and a callback for progress.
-pub fn endian_swap<P, F>(input_file: P, output_file: P, progress_cb: F)
-where
-    P: AsRef<Path>,
-    F: Fn(f64),
-{
+pub fn endian_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
     let in_file = fs::File::open(input_file)
         .unwrap_or_else(|e| panic!("failed to open the ROM as a file: {}", e));
-    let mut out_file = fs::File::create(output_file)
+    let out_file = fs::File::create(output_file)
         .unwrap_or_else(|e| panic!("failed to create the new ROM: {}", e));
+    let mut out_file_writer = BufWriter::new(out_file);
 
-    for idx in (0..ROM_LEN).step_by(4) {
-        let mut buf: [u8; 4] = [0, 0, 0, 0];
+    for idx in (0..ROM_LEN).step_by(65536) {
+        let mut buf: Vec<u8> = (0..65536).map(|_| 0).collect::<Vec<u8>>();
         in_file.read_at(&mut buf, idx.into()).unwrap();
 
-        let new_bytes = vec![buf[3], buf[2], buf[1], buf[0]]; // performance matters!
-        out_file.write(&new_bytes).unwrap();
+        let new_bytes = buf
+            .chunks(4)
+            .flat_map(|chunk| [chunk[3], chunk[2], chunk[1], chunk[0]])
+            .collect::<Vec<u8>>();
 
-        progress_cb((idx as f64) / (ROM_LEN as f64))
+        out_file_writer.write_all(&new_bytes).unwrap();
     }
 }
 
-/// Swap pairs of bytes in a ROM, taking
-/// in 2 paths and a callback for progress.
-pub fn byte_swap<P, F>(input_file: P, output_file: P, progress_cb: F)
-where
-    P: AsRef<Path>,
-    F: Fn(f64),
-{
+pub fn byte_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
     let in_file = fs::File::open(input_file).unwrap();
-    let mut out_file = fs::File::create(output_file).unwrap();
 
-    for idx in (0..ROM_LEN).step_by(2) {
-        let mut buf: [u8; 2] = [0, 0];
+    let out_file = fs::File::create(output_file).unwrap();
+    let mut out_file_writer = BufWriter::new(out_file);
+
+    for idx in (0..ROM_LEN).step_by(65536) {
+        let mut buf = (0..65536).map(|_| 0).collect::<Vec<u8>>();
         in_file.read_at(&mut buf, idx.into()).unwrap();
 
         // let swapped_bytes = buf.into_iter().rev().collect::<Vec<u8>>();
-        let swapped_bytes = vec![buf[1], buf[0]]; // performance matters!
-        out_file.write(&swapped_bytes).unwrap();
+        let swapped_bytes = buf
+            .chunks(2)
+            .flat_map(|chunk| [chunk[1], chunk[0]])
+            .collect::<Vec<u8>>();
 
-        progress_cb((idx as f64) / (ROM_LEN as f64))
+        out_file_writer.write_all(&swapped_bytes).unwrap();
     }
 }
 
 /// Both swap byte pairs and change the
 /// endianness of a ROM, taking in 2
 /// paths and a callback for progress.
-pub fn byte_endian_swap<P, F>(input_file: P, output_file: P, progress_cb: F)
-where
-    P: AsRef<Path>,
-    F: Fn(f64),
-{
+pub fn byte_endian_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
     let in_file = fs::File::open(input_file).unwrap();
-    let mut out_file = fs::File::create(output_file).unwrap();
 
-    for idx in (0..ROM_LEN).step_by(4) {
-        let mut buf: [u8; 4] = [0, 0, 0, 0];
+    let out_file = fs::File::create(output_file).unwrap();
+    let mut out_file_writer = BufWriter::new(out_file);
+
+    for idx in (0..ROM_LEN).step_by(65536) {
+        let mut buf: Vec<u8> = (0..65536).map(|_| 0).collect::<Vec<u8>>();
         in_file.read_at(&mut buf, idx.into()).unwrap();
 
-        let new_bytes = vec![buf[2], buf[3], buf[0], buf[1]]; // 0, 1, 2, 3 -> 1, 0, 3, 2 -> 2, 3, 0, 1 (swap pairs anc convert endianness)
-        out_file.write(&new_bytes).unwrap();
+        let new_bytes = buf
+            .chunks(4)
+            .flat_map(|chunk| [chunk[2], chunk[3], chunk[0], chunk[1]])
+            .collect::<Vec<u8>>();
 
-        progress_cb((idx as f64) / (ROM_LEN as f64))
+        out_file_writer.write_all(&new_bytes).unwrap();
     }
 }
