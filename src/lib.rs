@@ -23,7 +23,7 @@ use RomType::*;
 
 const ROM_LEN: u32 = 8388608; // 8MiB exactly
 
-#[derive(PartialEq, Eq, Debug, Deserialize, Serialize)]
+#[derive(PartialEq, Eq, Debug, Deserialize, Serialize, Clone, Copy)]
 pub enum RomType {
     /// A Byte-Swappled LE ROM (v64)
     #[serde(rename = "rom_ByteSwapped")]
