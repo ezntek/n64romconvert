@@ -16,18 +16,23 @@ use std::{
     path::Path,
     process::exit,
 };
+
+use serde::{Deserialize, Serialize};
+
 use RomType::*;
 
 const ROM_LEN: u32 = 8388608; // 8MiB exactly
 
-#[derive(PartialEq, Eq, Debug)]
-/// An enum to represent the different ROM types.
+#[derive(PartialEq, Eq, Debug, Deserialize, Serialize)]
 pub enum RomType {
     /// A Byte-Swappled LE ROM (v64)
+    #[serde(rename = "rom_ByteSwapped")]
     ByteSwapped,
     /// A Little-Endian ROM (n64)
+    #[serde(rename = "rom_LittleEndian")]
     LittleEndian,
     /// A Big-Endian ROM (z64)
+    #[serde(rename = "rom_BigEndian")]
     BigEndian,
 }
 

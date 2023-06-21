@@ -1,6 +1,6 @@
 [package]
 name = "n64romconvert"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 license = "MIT"
 readme = "README.md"
@@ -12,3 +12,4 @@ documentation = "https://docs.rs/n64romconvert/latest/n64romconvert/index.html"
 [dependencies]
 clap = { version = "4.3.4", features = ["derive"] }
 colored = "2.0.0"
+serde = { version = "1.0.164", features = ["derive"], default-features = false}
