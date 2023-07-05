@@ -8,6 +8,7 @@
 //!
 
 use colored::Colorize;
+use rayon::prelude::*;
 use std::{
     fmt::Display,
     fs,
@@ -138,7 +139,7 @@ pub fn endian_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
         in_file.read_at(&mut buf, idx.into()).unwrap();
 
         let new_bytes = buf
-            .chunks(4)
+            .par_chunks(4)
             .flat_map(|chunk| [chunk[3], chunk[2], chunk[1], chunk[0]])
             .collect::<Vec<u8>>();
 
@@ -160,7 +161,7 @@ pub fn byte_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
 
         // let swapped_bytes = buf.into_iter().rev().collect::<Vec<u8>>();
         let swapped_bytes = buf
-            .chunks(2)
+            .par_chunks(2)
             .flat_map(|chunk| [chunk[1], chunk[0]])
             .collect::<Vec<u8>>();
 
@@ -181,7 +182,7 @@ pub fn byte_endian_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
         in_file.read_at(&mut buf, idx.into()).unwrap();
 
         let new_bytes = buf
-            .chunks(4)
+            .par_chunks(4)
             .flat_map(|chunk| [chunk[2], chunk[3], chunk[0], chunk[1]])
             .collect::<Vec<u8>>();
 

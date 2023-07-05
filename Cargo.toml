@@ -1,15 +1,2 @@
-[package]
-name = "n64romconvert"
-version = "1.0.2"
-edition = "2021"
-license = "MIT"
-readme = "README.md"
-description = "Small tool to help you convert between Nintendo 64 ROM formats, on the CLI."
-documentation = "https://docs.rs/n64romconvert/latest/n64romconvert/index.html"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-clap = { version = "4.3.4", features = ["derive"] }
-colored = "2.0.0"
-serde = { version = "1.0.164", features = ["derive"], default-features = false}
+[workspace]
+members = [ "crates/n64romconvert", "crates/n64romconvert_pybindings" ]
