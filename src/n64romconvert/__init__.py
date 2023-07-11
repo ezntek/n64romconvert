@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from _n64romconvert_wrapper import determine_format as _determine_format
 from enum import Enum, auto
+from pathlib import Path
 
 ROMTYPE_CONVERSIONS = {
     "ByteSwapped": "v64",
@@ -9,6 +10,9 @@ ROMTYPE_CONVERSIONS = {
 
 class ConversionError(Exception):
     """Represents a ROM conversion error."""
+
+class RomError(Exception):
+    """Represents a ROM-related error."""
 
 class RomType(Enum):
     """Represents a ROM Type (n64, z64, v64)."""
@@ -31,10 +35,30 @@ class RomType(Enum):
             case _:
                 raise ValueError(f"{s.lower()} is not a valid ROM type!")
 
-@dataclass(frozen=True)
-class Rom:
-    type: RomType
-    path: str
+def determine_format(path: str | Path) -> RomType:
+    try:
+        p = (path.__str__() if isinstance(path, Path)
+                else path)
 
-# unexpose via deletion
-del ROMTYPE_CONVERSIONS
+        fmt = _determine_format(p)
+        return RomType.from_str(fmt)
+    except ValueError as err:
+        raise RomError(err.__str__())
+
+class Rom:
+    def __init__(self,
+                 path: str | Path,
+                 rom_type: RomType | None = None,
+                 ) -> None:
+        if isinstance(path, str):
+            self.path = Path(path)
+        else:
+            self.path = path 
+
+        if not (p := self.path).exists():
+            raise FileNotFoundError(f"could not find a ROM at {p}.")
+        
+        if not rom_type:
+            self.rom_type = determine_format(path)
+        else:
+            self.rom_type = rom_type
