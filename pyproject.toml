@@ -1,0 +1,42 @@
+# poetry
+[tool.poetry]
+name = "n64romconvert"
+version = "1.0.0"
+description = "Convert between different N64 ROM formats with ease"
+authors = ["ezntek <eason@ezntek.com>"]
+license = "MPL-2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pytest = "^7.4.0"
+
+[tool.poetry.group.dev.dependencies]
+maturin = "^1.1.0"
+patchelf = "^0.17.2.1"
+
+# maturin
+[tool.maturin]
+manifest-path = "crates/n64romconvert-wrapper/Cargo.toml"
+module-name = "n64romconvert._n64romconvert_wrapper"
+
+[build-system]
+requires = ["maturin>=1.1,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "n64romconvert"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    #"Programming Language :: Python :: Implementation :: PyPy",
+]
+
+[project.urls]
+homepage = "https://github.com/ezntek/n64romconvert"
+
+# pyright
+[tool.pyright]
+include = [ "src/n64romconvert", "src/n64romconvert_tests" ]
+typeCheckingMode = "strict"

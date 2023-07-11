@@ -1,1 +1,11 @@
+# rust
+**/target
 /target
+
+# python
+**/__pycache__
+**/.pytest_cache
+.venv
+
+# anti copyrighted material(s) measure
+**/*.*64
