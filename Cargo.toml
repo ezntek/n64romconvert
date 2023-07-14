@@ -1,0 +1,2 @@
+[workspace]
+members = ["crates/n64romconvert", "crates/n64romconvert-wrapper"]

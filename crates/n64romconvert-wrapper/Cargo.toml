@@ -1,10 +1,10 @@
 [package]
 name = "n64romconvert-wrapper"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 repository = "https://github.com/ezntek/n64romconvert"
 description = "Python wrapper functions for n64romconvert."
-license = "MPL-2.0"
+license = "MIT"
 
 [lib]
 name = "n64romconvert_wrapper"

@@ -4,7 +4,7 @@ name = "n64romconvert"
 version = "1.0.0"
 description = "Convert between different N64 ROM formats with ease"
 authors = ["ezntek <eason@ezntek.com>"]
-license = "MPL-2.0"
+license = "MIT"
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -30,7 +30,7 @@ requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
-    #"Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: Implementation :: PyPy",
 ]
 
 [project.urls]
@@ -38,5 +38,5 @@ homepage = "https://github.com/ezntek/n64romconvert"
 
 # pyright
 [tool.pyright]
-include = [ "src/n64romconvert", "src/n64romconvert_tests" ]
+include = ["src/n64romconvert", "src/n64romconvert_tests"]
 typeCheckingMode = "strict"
