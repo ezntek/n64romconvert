@@ -3,7 +3,7 @@ name = "n64romconvert"
 version = "1.1.0"
 edition = "2021"
 license = "MIT"
-readme = "README.md"
+readme = "../../README.md"
 description = "Convert between N64 ROM formats with ease."
 documentation = "https://docs.rs/n64romconvert/latest/n64romconvert/index.html"
 
