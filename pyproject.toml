@@ -1,7 +1,7 @@
 # poetry
 [tool.poetry]
 name = "n64romconvert"
-version = "1.0.0"
+version = "1.1.0"
 description = "Convert between different N64 ROM formats with ease"
 authors = ["ezntek <eason@ezntek.com>"]
 license = "MIT"

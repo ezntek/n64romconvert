@@ -11,8 +11,7 @@ use colored::Colorize;
 use std::{
     fmt::Display,
     fs,
-    io::{BufWriter, Read, Write},
-    os::unix::prelude::FileExt,
+    io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write},
     path::Path,
     process::exit,
 };
@@ -20,8 +19,6 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use RomType::*;
-
-const ROM_LEN: u32 = 8388608; // 8MiB exactly
 
 #[derive(PartialEq, Eq, Debug, Deserialize, Serialize, Clone, Copy)]
 pub enum RomType {
@@ -126,90 +123,112 @@ pub fn determine_format<P: AsRef<Path>>(file_path: P) -> Result<RomType, Error> 
 }
 
 /// Swap the endianness of the ROM.
+/// Z64-N64
 pub fn endian_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
     let in_file = fs::File::open(input_file)
         .unwrap_or_else(|e| panic!("failed to open the ROM as a file: {}", e));
     let out_file = fs::File::create(output_file)
         .unwrap_or_else(|e| panic!("failed to create the new ROM: {}", e));
-    let mut out_file_writer = BufWriter::new(out_file);
 
-    for idx in (0..ROM_LEN).step_by(262144) {
-        let mut buf: Vec<u8> = (0..262144).map(|_| 0).collect::<Vec<u8>>();
-        in_file.read_at(&mut buf, idx.into()).unwrap();
+    let mut in_reader = BufReader::new(in_file);
+    let mut out_writer = BufWriter::new(out_file);
 
-        let new_bytes = buf
-            .chunks(16)
-            .flat_map(|chunk| {
-                [
-                    chunk[3], chunk[2], chunk[1], chunk[0], //
-                    chunk[7], chunk[6], chunk[5], chunk[4], //
-                    chunk[11], chunk[10], chunk[9], chunk[8], //
-                    chunk[15], chunk[14], chunk[13], chunk[12], //
-                ]
-            })
-            .collect::<Vec<u8>>();
+    const CHUNK_COUNT: usize = 256;
+    const BUF_SIZE: usize = CHUNK_COUNT * 4;
 
-        out_file_writer.write_all(&new_bytes).unwrap();
+    let size = in_reader.seek(SeekFrom::End(0)).unwrap();
+    if !size.is_multiple_of(CHUNK_COUNT as u64) {
+        panic!("ROM size is not a multiple of {BUF_SIZE}!");
+    }
+    in_reader.seek(SeekFrom::Start(0)).unwrap();
+
+    let mut old_chunk: [u8; BUF_SIZE] = [0; BUF_SIZE];
+    let mut new_chunk: [u8; BUF_SIZE] = [0; BUF_SIZE];
+
+    loop {
+        let bytes_read = in_reader.read(&mut old_chunk).unwrap();
+        if bytes_read == 0 {
+            break;
+        }
+        for chunk in 0..CHUNK_COUNT {
+            for i in 0..4 {
+                new_chunk[4 * chunk + i] = old_chunk[4 * chunk + (3 - i)];
+            }
+        }
+        out_writer.write_all(&new_chunk).unwrap();
     }
 }
 
 /// Byteswap a rom, where pairs of bytes
-/// are swapped.
+/// are swapped. Z64-V64
 pub fn byte_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
-    let in_file = fs::File::open(input_file).unwrap();
+    let in_file = fs::File::open(input_file)
+        .unwrap_or_else(|e| panic!("failed to open the ROM as a file: {}", e));
+    let out_file = fs::File::create(output_file)
+        .unwrap_or_else(|e| panic!("failed to create the new ROM: {}", e));
 
-    let out_file = fs::File::create(output_file).unwrap();
-    let mut out_file_writer = BufWriter::new(out_file);
+    let mut in_reader = BufReader::new(in_file);
+    let mut out_writer = BufWriter::new(out_file);
 
-    for idx in (0..ROM_LEN).step_by(524288) {
-        let mut buf = (0..524288).map(|_| 0).collect::<Vec<u8>>();
-        in_file.read_at(&mut buf, idx.into()).unwrap();
+    const CHUNK_COUNT: usize = 256;
+    const BUF_SIZE: usize = CHUNK_COUNT * 2;
 
-        // let swapped_bytes = buf.into_iter().rev().collect::<Vec<u8>>();
-        let swapped_bytes = buf
-            .chunks(16)
-            .flat_map(|chunk| {
-                [
-                    chunk[1], chunk[0], //
-                    chunk[3], chunk[2], //
-                    chunk[5], chunk[4], //
-                    chunk[7], chunk[6], //
-                    chunk[9], chunk[8], //
-                    chunk[11], chunk[10], //
-                    chunk[13], chunk[12], //
-                    chunk[15], chunk[14], //
-                ]
-            })
-            .collect::<Vec<u8>>();
+    let size = in_reader.seek(SeekFrom::End(0)).unwrap();
+    if !size.is_multiple_of(CHUNK_COUNT as u64) {
+        panic!("ROM size is not a multiple of {BUF_SIZE}!");
+    }
+    in_reader.seek(SeekFrom::Start(0)).unwrap();
 
-        out_file_writer.write_all(&swapped_bytes).unwrap();
+    let mut old_chunk: [u8; BUF_SIZE] = [0; BUF_SIZE];
+    let mut new_chunk: [u8; BUF_SIZE] = [0; BUF_SIZE];
+
+    loop {
+        let bytes_read = in_reader.read(&mut old_chunk).unwrap();
+        if bytes_read == 0 {
+            break;
+        }
+        for chunk in 0..CHUNK_COUNT {
+            new_chunk[2 * chunk] = old_chunk[2 * chunk + 1];
+            new_chunk[2 * chunk + 1] = old_chunk[2 * chunk];
+        }
+        out_writer.write_all(&new_chunk).unwrap();
     }
 }
 
 /// Both swap byte pairs and change the
 /// endianness of a ROM.
 pub fn byte_endian_swap<P: AsRef<Path>>(input_file: P, output_file: P) {
-    let in_file = fs::File::open(input_file).unwrap();
+    let in_file = fs::File::open(input_file)
+        .unwrap_or_else(|e| panic!("failed to open the ROM as a file: {}", e));
+    let out_file = fs::File::create(output_file)
+        .unwrap_or_else(|e| panic!("failed to create the new ROM: {}", e));
 
-    let out_file = fs::File::create(output_file).unwrap();
-    let mut out_file_writer = BufWriter::new(out_file);
+    let mut in_reader = BufReader::new(in_file);
+    let mut out_writer = BufWriter::new(out_file);
 
-    for idx in (0..ROM_LEN).step_by(262144) {
-        let mut buf: Vec<u8> = (0..262144).map(|_| 0).collect::<Vec<u8>>();
-        in_file.read_at(&mut buf, idx.into()).unwrap();
+    const CHUNK_COUNT: usize = 256;
+    const BUF_SIZE: usize = CHUNK_COUNT * 4;
 
-        let new_bytes = buf
-            .chunks(16)
-            .flat_map(|chunk| {
-                [
-                    chunk[2], chunk[3], chunk[0], chunk[1], //
-                    chunk[6], chunk[7], chunk[4], chunk[5], //
-                    chunk[10], chunk[11], chunk[8], chunk[9], //
-                    chunk[14], chunk[15], chunk[12], chunk[13], //
-                ]
-            })
-            .collect::<Vec<u8>>();
+    let size = in_reader.seek(SeekFrom::End(0)).unwrap();
+    if !size.is_multiple_of(CHUNK_COUNT as u64) {
+        panic!("ROM size is not a multiple of {BUF_SIZE}!");
+    }
+    in_reader.seek(SeekFrom::Start(0)).unwrap();
 
-        out_file_writer.write_all(&new_bytes).unwrap();
+    let mut old_chunk: [u8; BUF_SIZE] = [0; BUF_SIZE];
+    let mut new_chunk: [u8; BUF_SIZE] = [0; BUF_SIZE];
+
+    loop {
+        let bytes_read = in_reader.read(&mut old_chunk).unwrap();
+        if bytes_read == 0 {
+            break;
+        }
+        for chunk in 0..CHUNK_COUNT {
+            new_chunk[4 * chunk] = old_chunk[4 * chunk + 2];
+            new_chunk[4 * chunk + 1] = old_chunk[4 * chunk + 3];
+            new_chunk[4 * chunk + 2] = old_chunk[4 * chunk];
+            new_chunk[4 * chunk + 3] = old_chunk[4 * chunk + 1];
+        }
+        out_writer.write_all(&new_chunk).unwrap();
     }
 }
